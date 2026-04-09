@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Business Card Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0d0d0d;
+      color: #f0f0f0;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    h1 { font-size: 2rem; letter-spacing: 0.15em; text-align: center; color: #fff; margin-bottom: 0.4rem; }
+    .subtitle { text-align: center; color: #ccc; font-size: 1rem; margin-bottom: 2.5rem; letter-spacing: 0.1em; }
+    .container { max-width: 700px; margin: 0 auto; }
+    .card {
+      background: #1a1a1a; border: 1px solid #333;
+      border-radius: 8px; padding: 1.8rem; margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.1rem; color: #fff; letter-spacing: 0.12em; margin-bottom: 1.2rem;
+      border-bottom: 1px solid #333; padding-bottom: 0.6rem; }
+    label { display: block; font-size: 0.9rem; color: #ccc; margin-bottom: 0.3rem; }
+    input[type="text"], input[type="email"], input[type="tel"] {
+      width: 100%; background: #0d0d0d; border: 1px solid #444; border-radius: 4px;
+      color: #fff; font-family: 'Courier New', monospace; font-size: 1rem;
+      padding: 0.6rem 0.8rem; margin-bottom: 1rem; outline: none; transition: border-color 0.2s;
+    }
+    input:focus { border-color: #fff; }
+    .upload-area {
+      border: 2px dashed #444; border-radius: 6px; padding: 1.5rem;
+      text-align: center; cursor: pointer; transition: border-color 0.2s; position: relative;
+    }
+    .upload-area:hover { border-color: #fff; }
+    .upload-area input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-area p { font-size: 1rem; color: #ccc; pointer-events: none; }
+    .upload-area p span { color: #fff; font-weight: bold; }
+    #preview-portrait {
+      display: none; width: 100px; height: 100px; object-fit: cover;
+      border: 2px solid #555; border-radius: 4px; margin: 0.8rem auto 0;
+    }
+    #btn-generate {
+      width: 100%; background: #fff; color: #000; border: none; border-radius: 4px;
+      font-family: 'Courier New', monospace; font-size: 1.2rem; font-weight: bold;
+      letter-spacing: 0.15em; padding: 0.9rem; cursor: pointer; transition: background 0.2s;
+    }
+    #btn-generate:hover { background: #ddd; }
+    #btn-generate:disabled { background: #444; color: #888; cursor: not-allowed; }
+    #output-section { display: none; }
+    #btn-download {
+      display: block; width: 100%; background: #0d0d0d; color: #fff;
+      border: 1px solid #fff; border-radius: 4px; font-family: 'Courier New', monospace;
+      font-size: 1rem; letter-spacing: 0.12em; padding: 0.8rem; cursor: pointer; margin-top: 1rem;
+    }
+    #btn-download:hover { background: #1a1a1a; }
+    #status-msg { text-align: center; font-size: 0.95rem; color: #ccc; margin-top: 0.8rem; min-height: 1.4rem; }
+
+    /* Business card preview */
+    #card-preview {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      display: block;
+      border: 1px solid #444;
+      border-radius: 4px;
+    }
+    .nav { display: flex; gap: 1rem; justify-content: center; margin-bottom: 2rem; }
+    .nav a {
+      color: #888; text-decoration: none; font-size: 0.9rem; letter-spacing: 0.1em;
+      padding: 0.4rem 1rem; border: 1px solid #444; border-radius: 4px;
+    }
+    .nav a.active { color: #fff; border-color: #fff; }
+    .footer { text-align: center; color: #999; font-size: 0.8rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>QR BUSINESS CARD</h1>
+  <p class="subtitle">GENERATOR — V1a</p>
+
+  <div class="nav">
+    <a href="index.html">🎨 Poster Art</a>
+    <a href="card.html" class="active">💼 Business Card</a>
+  </div>
+
+  <!-- Contact data -->
+  <div class="card">
+    <h2>01 / CONTACT DATA</h2>
+    <label>Full Name</label>
+    <input type="text" id="f-name" placeholder="Jane Doe">
+    <label>Phone</label>
+    <input type="tel" id="f-phone" placeholder="+1 555 000 1234">
+    <label>Email</label>
+    <input type="email" id="f-email" placeholder="jane@example.com">
+  </div>
+
+  <!-- Portrait -->
+  <div class="card">
+    <h2>02 / PORTRAIT PHOTO</h2>
+    <div class="upload-area">
+      <input type="file" id="portrait-file" accept="image/*">
+      <p>Click or drag &amp; drop your photo<br><span>JPG / PNG / WEBP</span></p>
+    </div>
+    <img id="preview-portrait" alt="Portrait preview">
+  </div>
+
+  <!-- Generate -->
+  <div class="card">
+    <h2>03 / GENERATE</h2>
+    <button id="btn-generate">GENERATE BUSINESS CARD</button>
+    <p id="status-msg">Fill in your data and upload a photo to begin.</p>
+  </div>
+
+  <!-- Output -->
+  <div class="card" id="output-section">
+    <h2>04 / RESULT</h2>
+    <canvas id="card-preview"></canvas>
+    <button id="btn-download">⬇ DOWNLOAD PNG (print ready)</button>
+  </div>
+
+  <p class="footer">All processing is done locally in your browser. Nothing is uploaded to any server.</p>
+</div>
+
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+// ============================================================
+// Portrait preview
+// ============================================================
+let portraitDataURL = null;
+document.getElementById('portrait-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    portraitDataURL = ev.target.result;
+    const preview = document.getElementById('preview-portrait');
+    preview.src = portraitDataURL;
+    preview.style.display = 'block';
+    document.querySelector('.upload-area p').innerHTML = `Loaded: <span>${file.name}</span>`;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ============================================================
+// Build vCard
+// ============================================================
+function buildVCard() {
+  const name  = document.getElementById('f-name').value.trim()  || 'Unknown';
+  const phone = document.getElementById('f-phone').value.trim() || '';
+  const email = document.getElementById('f-email').value.trim() || '';
+  const lines = [
+    'BEGIN:VCARD', 'VERSION:3.0', `FN:${name}`,
+    phone ? `TEL:${phone}` : '',
+    email ? `EMAIL:${email}` : '',
+    'END:VCARD'
+  ].filter(Boolean).join('\n');
+  // Pad to force larger QR version for better quality
+  return lines + ' '.repeat(Math.max(0, 400 - lines.length));
+}
+
+// ============================================================
+// Generate QR matrix
+// ============================================================
+function getQRMatrix(data) {
+  const qr = qrcode(0, 'H');
+  qr.addData(data);
+  qr.make();
+  const sz = qr.getModuleCount();
+  const m = [];
+  for (let y = 0; y < sz; y++) {
+    const row = [];
+    for (let x = 0; x < sz; x++) row.push(qr.isDark(y, x));
+    m.push(row);
+  }
+  return m;
+}
+
+// ============================================================
+// Main: render business card
+// Business card dimensions: 85mm x 54mm @ 300 DPI
+// = 1004 x 638 px
+// Layout:
+//   Left half (502px): portrait photo, full height
+//   Right half (502px): QR code centered, name + contact below
+// ============================================================
+document.getElementById('btn-generate').addEventListener('click', async () => {
+  const btn = document.getElementById('btn-generate');
+  const status = document.getElementById('status-msg');
+  btn.disabled = true;
+
+  const name  = document.getElementById('f-name').value.trim()  || 'Your Name';
+  const phone = document.getElementById('f-phone').value.trim() || '';
+  const email = document.getElementById('f-email').value.trim() || '';
+
+  status.textContent = 'Generating QR code...';
+  const matrix = getQRMatrix(buildVCard());
+  const qrSize = matrix.length;
+
+  // Business card canvas: 1004 x 638px (85x54mm @ 300dpi)
+  const CW = 1004, CH = 638;
+  const canvas = document.getElementById('card-preview');
+  canvas.width  = CW;
+  canvas.height = CH;
+  const ctx = canvas.getContext('2d');
+
+  // Background: clean white
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, CW, CH);
+
+  // === LEFT SIDE: Portrait ===
+  const photoW = Math.floor(CW * 0.42);  // 42% of width
+  const photoH = CH;
+
+  if (portraitDataURL) {
+    status.textContent = 'Drawing portrait...';
+    const pImg = new Image();
+    await new Promise(res => { pImg.onload = res; pImg.src = portraitDataURL; });
+
+    // Draw portrait cropped to fill left panel (object-fit: cover)
+    const srcRatio = pImg.width / pImg.height;
+    const dstRatio = photoW / photoH;
+    let sx, sy, sw, sh;
+    if (srcRatio > dstRatio) {
+      sh = pImg.height; sw = sh * dstRatio;
+      sx = (pImg.width - sw) / 2; sy = 0;
+    } else {
+      sw = pImg.width; sh = sw / dstRatio;
+      sx = 0; sy = (pImg.height - sh) / 2;
+    }
+    ctx.drawImage(pImg, sx, sy, sw, sh, 0, 0, photoW, photoH);
+  } else {
+    // Placeholder grey box
+    ctx.fillStyle = '#cccccc';
+    ctx.fillRect(0, 0, photoW, photoH);
+    ctx.fillStyle = '#888';
+    ctx.font = 'bold 24px Courier New';
+    ctx.textAlign = 'center';
+    ctx.fillText('PHOTO', photoW/2, photoH/2);
+  }
+
+  // Thin vertical divider
+  ctx.fillStyle = '#000000';
+  ctx.fillRect(photoW, 0, 2, CH);
+
+  // === RIGHT SIDE: QR + Contact info ===
+  const rightX = photoW + 2;
+  const rightW = CW - rightX;
+
+  // QR code: sized to fit in right panel with margins
+  const margin = 24;
+  const contactH = 110;  // space for text at bottom
+  const qrAreaH = CH - contactH - margin * 2;
+  const qrAreaW = rightW - margin * 2;
+  const qrFit = Math.min(qrAreaW, qrAreaH);
+  const BOX = Math.floor(qrFit / qrSize);
+  const qrPx = BOX * qrSize;
+  const qrX = rightX + Math.floor((rightW - qrPx) / 2);
+  const qrY = margin;
+
+  status.textContent = 'Drawing QR code...';
+
+  // Draw QR — clean black/white, 100% scannable
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(qrX, qrY, qrPx, qrPx);
+  for (let y = 0; y < qrSize; y++) {
+    for (let x = 0; x < qrSize; x++) {
+      ctx.fillStyle = matrix[y][x] ? '#000000' : '#ffffff';
+      ctx.fillRect(qrX + x * BOX, qrY + y * BOX, BOX, BOX);
+    }
+  }
+
+  // === Contact info text ===
+  const textY = qrY + qrPx + 18;
+  ctx.textAlign = 'center';
+  const textCX = rightX + rightW / 2;
+
+  ctx.fillStyle = '#000000';
+  ctx.font = `bold ${Math.floor(rightW * 0.075)}px Courier New`;
+  ctx.fillText(name, textCX, textY);
+
+  ctx.font = `${Math.floor(rightW * 0.055)}px Courier New`;
+  ctx.fillStyle = '#222222';
+  if (phone) ctx.fillText(phone, textCX, textY + Math.floor(rightW * 0.075));
+  if (email) ctx.fillText(email, textCX, textY + Math.floor(rightW * 0.075) * 2);
+
+  // Thin border around entire card
+  ctx.strokeStyle = '#000000';
+  ctx.lineWidth = 3;
+  ctx.strokeRect(1, 1, CW-2, CH-2);
+
+  document.getElementById('output-section').style.display = 'block';
+  document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+  status.textContent = 'Done! Download and print at 300 DPI (85×54mm).';
+  btn.disabled = false;
+});
+
+// ============================================================
+// Download
+// ============================================================
+document.getElementById('btn-download').addEventListener('click', () => {
+  const canvas = document.getElementById('card-preview');
+  const link = document.createElement('a');
+  link.download = 'business_card.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+</script>
+</body>
+</html>
