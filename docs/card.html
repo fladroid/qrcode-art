@@ -78,7 +78,7 @@
 <body>
 <div class="container">
   <h1>QR BUSINESS CARD</h1>
-  <p class="subtitle">GENERATOR — V1a</p>
+  <p class="subtitle">GENERATOR — V1b</p>
 
   <div class="nav">
     <a href="index.html">🎨 Poster Art</a>
@@ -250,7 +250,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
 
   // QR code: sized to fit in right panel with margins
   const margin = 24;
-  const contactH = 110;  // space for text at bottom
+  const contactH = 130;  // space for text at bottom
   const qrAreaH = CH - contactH - margin * 2;
   const qrAreaW = rightW - margin * 2;
   const qrFit = Math.min(qrAreaW, qrAreaH);
@@ -272,7 +272,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   }
 
   // === Contact info text ===
-  const textY = qrY + qrPx + 18;
+  const textY = qrY + qrPx + 36;
   ctx.textAlign = 'center';
   const textCX = rightX + rightW / 2;
 
