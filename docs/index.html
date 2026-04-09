@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V2a POSTER</p>
+  <p class="subtitle">GENERATOR — V2b</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -537,6 +537,29 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(qrOffscreen, 0, 0);
+
+  // --- CRITICAL: Redraw finder patterns and timing patterns as clean B&W ---
+  // The multiply blend may have tinted these zones grey, making scanner fail
+  // We overdraw them with pure black/white to guarantee scannability
+  function redrawClean(px, py, pw, ph) {
+    for (let gy = py; gy < py + ph; gy++) {
+      for (let gx = px; gx < px + pw; gx++) {
+        if (gy < size && gx < size) {
+          ctx.fillStyle = matrix[gy][gx] ? '#000000' : '#ffffff';
+          ctx.fillRect(gx * BOX, gy * BOX, BOX, BOX);
+        }
+      }
+    }
+  }
+  // Top-left finder (0,0) to (8,8)
+  redrawClean(0, 0, 9, 9);
+  // Top-right finder
+  redrawClean(size - 9, 0, 9, 9);
+  // Bottom-left finder
+  redrawClean(0, size - 9, 9, 9);
+  // Timing patterns (row 6 and col 6)
+  redrawClean(0, 6, size, 1);
+  redrawClean(6, 0, 1, size);
 
   // Show output section
   document.getElementById('output-section').style.display = 'block';
