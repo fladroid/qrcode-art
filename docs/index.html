@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1h</p>
+  <p class="subtitle">GENERATOR — V1i</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -253,8 +253,8 @@
 
     <div class="slider-row">
       <label style="margin:0; min-width:120px;">B&amp;W Threshold</label>
-      <input type="range" id="threshold" min="50" max="220" value="128">
-      <span id="threshold-val">128</span>
+      <input type="range" id="threshold" min="50" max="220" value="160">
+      <span id="threshold-val">160</span>
     </div>
   </div>
 
@@ -461,7 +461,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
         const dy = Math.abs(y - cy) / (size / 2);
         const distFromCenter = Math.max(dx, dy);    // Chebyshev distance
 
-        if (distFromCenter < 0.40) {
+        if (distFromCenter < 0.45) {
           // Center zone: portrait drives the pixel
           dark = imgDark;
         } else {
