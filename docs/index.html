@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1j</p>
+  <p class="subtitle">GENERATOR — V1k</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -237,8 +237,7 @@
     <label>Email</label>
     <input type="email" id="f-email" placeholder="jane@example.com">
 
-    <label>Address</label>
-    <input type="text" id="f-address" placeholder="123 Main St, Springfield, IL 62701, USA">
+    <!-- Address field hidden: using name + phone + email only (version 40 QR) -->
   </div>
 
   <!-- Portrait upload -->
@@ -315,19 +314,26 @@ function updateUploadLabel(name) {
 // Build vCard string from form fields
 // ============================================================
 function buildVCard() {
-  const name    = document.getElementById('f-name').value.trim()    || 'Unknown';
-  const phone   = document.getElementById('f-phone').value.trim()   || '';
-  const email   = document.getElementById('f-email').value.trim()   || '';
-  const address = document.getElementById('f-address').value.trim() || '';
-  return [
+  const name  = document.getElementById('f-name').value.trim()  || 'Unknown';
+  const phone = document.getElementById('f-phone').value.trim() || '';
+  const email = document.getElementById('f-email').value.trim() || '';
+
+  // Build minimal vCard (name + phone + email only)
+  const lines = [
     'BEGIN:VCARD',
     'VERSION:3.0',
     `FN:${name}`,
-    phone   ? `TEL:${phone}`           : '',
-    email   ? `EMAIL:${email}`         : '',
-    address ? `ADR:;;${address};;;;`   : '',
+    phone ? `TEL:${phone}` : '',
+    email ? `EMAIL:${email}` : '',
     'END:VCARD'
   ].filter(Boolean).join('\n');
+
+  // Pad with whitespace comments to force QR version 40 (177x177 matrix)
+  // Version 40-H supports up to 1273 bytes — more pixels = better portrait quality
+  // NOTE: trailing whitespace in vCard is ignored by all major contact readers
+  const TARGET_LENGTH = 1200;
+  const padding = ' '.repeat(Math.max(0, TARGET_LENGTH - lines.length));
+  return lines + padding;
 }
 
 // ============================================================
