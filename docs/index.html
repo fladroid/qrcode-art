@@ -6,560 +6,366 @@
   <title>QR Code Art Generator</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
-      background: #0d0d0d;
-      color: #f0f0f0;
+      background: #0d0d0d; color: #f0f0f0;
       font-family: 'Courier New', monospace;
-      min-height: 100vh;
-      padding: 2rem 1rem;
+      min-height: 100vh; padding: 2rem 1rem;
     }
-
-    h1 {
-      font-size: 2rem;
-      letter-spacing: 0.15em;
-      text-align: center;
-      margin-bottom: 0.4rem;
-      color: #fff;
-    }
-
-    .subtitle {
-      text-align: center;
-      color: #ccc;
-      font-size: 1rem;
-      margin-bottom: 2.5rem;
-      letter-spacing: 0.1em;
-    }
-
-    .container {
-      max-width: 700px;
-      margin: 0 auto;
-    }
-
+    h1 { font-size: 2rem; letter-spacing: 0.15em; text-align: center; color: #fff; margin-bottom: 0.4rem; }
+    .subtitle { text-align: center; color: #ccc; font-size: 1rem; margin-bottom: 2.5rem; letter-spacing: 0.1em; }
+    .container { max-width: 700px; margin: 0 auto; }
     .card {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 1.8rem;
-      margin-bottom: 1.5rem;
+      background: #1a1a1a; border: 1px solid #333;
+      border-radius: 8px; padding: 1.8rem; margin-bottom: 1.5rem;
     }
-
-    .card h2 {
-      font-size: 1.1rem;
-      color: #fff;
-      letter-spacing: 0.12em;
-      margin-bottom: 1.2rem;
-      border-bottom: 1px solid #333;
-      padding-bottom: 0.6rem;
+    .card h2 { font-size: 1.1rem; color: #fff; letter-spacing: 0.12em;
+      margin-bottom: 1.2rem; border-bottom: 1px solid #333; padding-bottom: 0.6rem; }
+    label { display: block; font-size: 0.9rem; color: #ccc; margin-bottom: 0.3rem; }
+    input[type="text"], input[type="email"], input[type="tel"] {
+      width: 100%; background: #0d0d0d; border: 1px solid #444; border-radius: 4px;
+      color: #fff; font-family: 'Courier New', monospace; font-size: 1rem;
+      padding: 0.6rem 0.8rem; margin-bottom: 1rem; outline: none; transition: border-color 0.2s;
     }
-
-    label {
-      display: block;
-      font-size: 0.85rem;
-      color: #ccc;
-      margin-bottom: 0.3rem;
-      letter-spacing: 0.08em;
-    }
-
-    input[type="text"],
-    input[type="email"],
-    input[type="tel"] {
-      width: 100%;
-      background: #0d0d0d;
-      border: 1px solid #444;
-      border-radius: 4px;
-      color: #fff;
-      font-family: 'Courier New', monospace;
-      font-size: 1rem;
-      padding: 0.6rem 0.8rem;
-      margin-bottom: 1rem;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    input[type="text"]:focus,
-    input[type="email"]:focus,
-    input[type="tel"]:focus {
-      border-color: #fff;
-    }
-
-    /* Portrait upload area */
+    input:focus { border-color: #fff; }
     .upload-area {
-      border: 2px dashed #444;
-      border-radius: 6px;
-      padding: 2rem;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.2s, background 0.2s;
-      position: relative;
+      border: 2px dashed #444; border-radius: 6px; padding: 1.5rem;
+      text-align: center; cursor: pointer; transition: border-color 0.2s; position: relative;
     }
-
-    .upload-area:hover {
-      border-color: #fff;
-      background: #111;
-    }
-
+    .upload-area:hover { border-color: #fff; }
     .upload-area input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
-
-    .upload-area p {
-      font-size: 1rem;
-      color: #bbb;
-      pointer-events: none;
-    }
-
-    .upload-area p span {
-      color: #fff;
-      font-weight: bold;
-    }
-
+    .upload-area p { font-size: 1rem; color: #ccc; pointer-events: none; }
+    .upload-area p span { color: #fff; font-weight: bold; }
     #preview-portrait {
-      display: none;
-      width: 120px;
-      height: 120px;
-      object-fit: cover;
-      border: 2px solid #555;
-      border-radius: 4px;
-      margin: 0.8rem auto 0;
-      image-rendering: pixelated;
+      display: none; width: 100px; height: 100px; object-fit: cover;
+      border: 2px solid #555; border-radius: 4px; margin: 0.8rem auto 0;
     }
+    .slider-row { display: flex; align-items: center; gap: 1rem; margin-top: 0.8rem; }
+    input[type="range"] { flex: 1; accent-color: #fff; }
+    #threshold-val { color: #fff; font-size: 1rem; min-width: 2.5rem; text-align: right; }
 
-    /* Threshold slider */
-    .slider-row {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-top: 0.8rem;
+    /* Two generate buttons */
+    .btn-row { display: flex; gap: 1rem; margin-bottom: 0.5rem; }
+    .btn-main {
+      flex: 1; border: none; border-radius: 4px;
+      font-family: 'Courier New', monospace; font-size: 1rem; font-weight: bold;
+      letter-spacing: 0.1em; padding: 0.9rem; cursor: pointer; transition: background 0.2s;
     }
+    #btn-card { background: #fff; color: #000; }
+    #btn-card:hover { background: #ddd; }
+    #btn-art  { background: #333; color: #fff; border: 1px solid #fff; }
+    #btn-art:hover  { background: #444; }
+    .btn-main:disabled { background: #333 !important; color: #666 !important; border-color: #333 !important; cursor: not-allowed; }
 
-    input[type="range"] {
-      flex: 1;
-      accent-color: #fff;
+    #status-msg { text-align: center; font-size: 0.95rem; color: #ccc; margin-top: 0.8rem; min-height: 1.4rem; }
+
+    /* Output sections */
+    .output-section { display: none; }
+    .output-section canvas {
+      display: block; width: 100%; max-width: 600px; height: auto;
+      margin: 0 auto; border: 1px solid #444; image-rendering: pixelated;
     }
-
-    #threshold-val {
-      color: #fff;
-      font-size: 1rem;
-      min-width: 2.5rem;
-      text-align: right;
+    .btn-download {
+      display: block; width: 100%; background: #0d0d0d; color: #fff;
+      border: 1px solid #fff; border-radius: 4px; font-family: 'Courier New', monospace;
+      font-size: 1rem; letter-spacing: 0.12em; padding: 0.8rem; cursor: pointer; margin-top: 1rem;
     }
-
-    /* Generate button */
-    #btn-generate {
-      width: 100%;
-      background: #fff;
-      color: #000;
-      border: none;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 1.2rem;
-      font-weight: bold;
-      letter-spacing: 0.15em;
-      padding: 0.9rem;
-      cursor: pointer;
-      transition: background 0.2s;
-      margin-top: 0.5rem;
-    }
-
-    #btn-generate:hover { background: #ddd; }
-    #btn-generate:disabled { background: #444; color: #ccc; cursor: not-allowed; }
-
-    /* Output */
-    #output-section { display: none; }
-
-    #output-section canvas {
-      display: block;
-      width: 100%;
-      max-width: 500px;
-      height: auto;
-      margin: 0 auto;
-      border: 2px solid #fff;
-      image-rendering: pixelated;
-    }
-
-    #btn-download {
-      display: block;
-      width: 100%;
-      background: #0d0d0d;
-      color: #fff;
-      border: 1px solid #fff;
-      border-radius: 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 1rem;
-      letter-spacing: 0.12em;
-      padding: 0.8rem;
-      cursor: pointer;
-      margin-top: 1rem;
-      transition: background 0.2s;
-    }
-
-    #btn-download:hover { background: #1a1a1a; }
-
-    #status-msg {
-      text-align: center;
-      font-size: 0.95rem;
-      color: #ccc;
-      margin-top: 0.8rem;
-      min-height: 1.4rem;
-    }
-
-    .footer {
-      text-align: center;
-      color: #999;
-      font-size: 0.8rem;
-      margin-top: 2rem;
-      letter-spacing: 0.08em;
-    }
+    .btn-download:hover { background: #1a1a1a; }
+    .footer { text-align: center; color: #999; font-size: 0.8rem; margin-top: 2rem; }
   </style>
 </head>
 <body>
 <div class="container">
-
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V2d</p>
+  <p class="subtitle">GENERATOR — V3a</p>
 
-  <!-- Contact data form -->
+  <!-- 01: Contact data -->
   <div class="card">
     <h2>01 / CONTACT DATA</h2>
-
     <label>Full Name</label>
     <input type="text" id="f-name" placeholder="Jane Doe">
-
     <label>Phone</label>
     <input type="tel" id="f-phone" placeholder="+1 555 000 1234">
-
     <label>Email</label>
     <input type="email" id="f-email" placeholder="jane@example.com">
-
-    <!-- Address field hidden: using name + phone + email only (version 40 QR) -->
   </div>
 
-  <!-- Portrait upload -->
+  <!-- 02: Image upload -->
   <div class="card">
-    <h2>02 / PORTRAIT PHOTO</h2>
-
+    <h2>02 / IMAGE</h2>
     <div class="upload-area">
       <input type="file" id="portrait-file" accept="image/*">
-      <p>Click or drag &amp; drop your photo<br><span>JPG / PNG / WEBP</span></p>
+      <p>Click or drag &amp; drop your photo<br>
+         <span>For Business Card: your portrait<br>
+         For Art QR: landmark / silhouette</span></p>
     </div>
-    <img id="preview-portrait" alt="Portrait preview">
-
+    <img id="preview-portrait" alt="Preview">
     <div class="slider-row">
-      <label style="margin:0; min-width:120px;">B&amp;W Threshold</label>
+      <label style="margin:0; min-width:130px;">Art QR Contrast</label>
       <input type="range" id="threshold" min="50" max="220" value="160">
       <span id="threshold-val">160</span>
     </div>
   </div>
 
-  <!-- Generate -->
+  <!-- 03: Generate -->
   <div class="card">
     <h2>03 / GENERATE</h2>
-    <button id="btn-generate">GENERATE QR CODE</button>
-    <p id="status-msg">Fill in your data and upload a photo to begin.</p>
+    <div class="btn-row">
+      <button class="btn-main" id="btn-card">💼 BUSINESS CARD</button>
+      <button class="btn-main" id="btn-art">🎨 ART QR POSTER</button>
+    </div>
+    <p id="status-msg">Fill in your data and upload an image to begin.</p>
   </div>
 
-  <!-- Output -->
-  <div class="card" id="output-section">
-    <h2>04 / RESULT</h2>
-    <canvas id="qr-canvas"></canvas>
-    <button id="btn-download">⬇ DOWNLOAD PNG</button>
+  <!-- 04a: Business Card output -->
+  <div class="card output-section" id="out-card">
+    <h2>04 / BUSINESS CARD RESULT</h2>
+    <canvas id="canvas-card"></canvas>
+    <button class="btn-download" id="btn-dl-card">⬇ DOWNLOAD BUSINESS CARD PNG</button>
+  </div>
+
+  <!-- 04b: Art QR output -->
+  <div class="card output-section" id="out-art">
+    <h2>04 / ART QR RESULT</h2>
+    <canvas id="canvas-art"></canvas>
+    <button class="btn-download" id="btn-dl-art">⬇ DOWNLOAD ART QR PNG</button>
   </div>
 
   <p class="footer">All processing is done locally in your browser. Nothing is uploaded to any server.</p>
-
 </div>
 
-<!-- QR code library (pure JS, no dependencies) -->
 <script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
 // ============================================================
-// Portrait preview + threshold live update
+// Shared state
 // ============================================================
-const portraitFile  = document.getElementById('portrait-file');
-const previewImg    = document.getElementById('preview-portrait');
-const threshSlider  = document.getElementById('threshold');
-const threshVal     = document.getElementById('threshold-val');
+let portraitDataURL = null;
 
-let portraitDataURL = null;  // stores loaded image as data URL
-
-portraitFile.addEventListener('change', (e) => {
+document.getElementById('portrait-file').addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (ev) => {
     portraitDataURL = ev.target.result;
-    previewImg.src = portraitDataURL;
-    previewImg.style.display = 'block';
-    updateUploadLabel(file.name);
+    const preview = document.getElementById('preview-portrait');
+    preview.src = portraitDataURL;
+    preview.style.display = 'block';
+    document.querySelector('.upload-area p').innerHTML =
+      `Loaded: <span>${file.name}</span>`;
   };
   reader.readAsDataURL(file);
 });
 
-threshSlider.addEventListener('input', () => {
-  threshVal.textContent = threshSlider.value;
+document.getElementById('threshold').addEventListener('input', () => {
+  document.getElementById('threshold-val').textContent =
+    document.getElementById('threshold').value;
 });
 
-function updateUploadLabel(name) {
-  const p = document.querySelector('.upload-area p');
-  p.innerHTML = `Loaded: <span>${name}</span>`;
-}
-
 // ============================================================
-// Build vCard string from form fields
+// Build vCard
 // ============================================================
-function buildVCard() {
+function buildVCard(padTo = 400) {
   const name  = document.getElementById('f-name').value.trim()  || 'Unknown';
   const phone = document.getElementById('f-phone').value.trim() || '';
   const email = document.getElementById('f-email').value.trim() || '';
-
-  // Build minimal vCard (name + phone + email only)
-  const lines = [
-    'BEGIN:VCARD',
-    'VERSION:3.0',
-    `FN:${name}`,
-    phone ? `TEL:${phone}` : '',
-    email ? `EMAIL:${email}` : '',
-    'END:VCARD'
-  ].filter(Boolean).join('\n');
-
-  // Pad with whitespace comments to force QR version 40 (177x177 matrix)
-  // Version 40-H supports up to 1273 bytes — more pixels = better portrait quality
-  // NOTE: trailing whitespace in vCard is ignored by all major contact readers
-  const TARGET_LENGTH = 1200;
-  const padding = ' '.repeat(Math.max(0, TARGET_LENGTH - lines.length));
-  return lines + padding;
+  const lines = ['BEGIN:VCARD','VERSION:3.0',`FN:${name}`,
+    phone?`TEL:${phone}`:'', email?`EMAIL:${email}`:'','END:VCARD']
+    .filter(Boolean).join('\n');
+  return lines + ' '.repeat(Math.max(0, padTo - lines.length));
 }
 
 // ============================================================
-// Convert portrait image to strict B&W pixel array
-// sized to match the QR matrix dimensions
-// ============================================================
-function preparePortrait(matrixSize, threshold) {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => {
-      // Draw portrait at exact QR matrix size using bicubic-quality smoothing
-      const c = document.createElement('canvas');
-      c.width  = matrixSize;
-      c.height = matrixSize;
-      const ctx = c.getContext('2d');
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, matrixSize, matrixSize);
-
-      // Read pixel data and convert to B&W using Floyd-Steinberg dithering
-      // Dithering preserves facial features much better than hard threshold
-      const imgData = ctx.getImageData(0, 0, matrixSize, matrixSize);
-      const pixels = imgData.data;
-
-      // Build grayscale float array
-      const gray = new Float32Array(matrixSize * matrixSize);
-      for (let i = 0; i < matrixSize * matrixSize; i++) {
-        gray[i] = 0.299 * pixels[i*4] + 0.587 * pixels[i*4+1] + 0.114 * pixels[i*4+2];
-      }
-
-      // Floyd-Steinberg dithering — applied only in center portrait zone
-      // Outside center zone: plain threshold (no error diffusion bleeds into QR data)
-      const CENTER_ZONE = 0.45;  // must match blend zone in render loop
-      const bw = new Array(matrixSize * matrixSize).fill(false);
-      const cx = matrixSize / 2, cy = matrixSize / 2;
-
-      for (let y = 0; y < matrixSize; y++) {
-        for (let x = 0; x < matrixSize; x++) {
-          const idx = y * matrixSize + x;
-          const oldVal = gray[idx];
-          const newVal = oldVal < threshold ? 0 : 255;
-          bw[idx] = newVal === 0;
-
-          // Only diffuse error within center zone — protect outer QR data modules
-          const ddx = Math.abs(x - cx) / (matrixSize / 2);
-          const ddy = Math.abs(y - cy) / (matrixSize / 2);
-          const inCenter = Math.max(ddx, ddy) < CENTER_ZONE;
-
-          if (inCenter) {
-            const err = oldVal - newVal;
-            if (x + 1 < matrixSize)                          gray[idx + 1]              += err * 7 / 16;
-            if (y + 1 < matrixSize && x > 0)                 gray[idx + matrixSize - 1] += err * 3 / 16;
-            if (y + 1 < matrixSize)                          gray[idx + matrixSize]     += err * 5 / 16;
-            if (y + 1 < matrixSize && x + 1 < matrixSize)    gray[idx + matrixSize + 1] += err * 1 / 16;
-          }
-        }
-      }
-      resolve(bw);
-    };
-    img.src = portraitDataURL;
-  });
-}
-
-// ============================================================
-// Detect structural QR zones that must never be modified:
-// finder patterns, separators, timing patterns
-// ============================================================
-function isProtected(x, y, size) {
-  if (x < 9 && y < 9)               return true;  // top-left finder
-  if (x > size - 10 && y < 9)       return true;  // top-right finder
-  if (x < 9 && y > size - 10)       return true;  // bottom-left finder
-  if (x === 6 || y === 6)            return true;  // timing patterns
-  return false;
-}
-
-// ============================================================
-// Generate QR matrix using qrcode-generator library
-// Returns 2D boolean matrix (true = dark module)
+// QR matrix helper
 // ============================================================
 function getQRMatrix(data) {
-  return new Promise((resolve) => {
-    // qrcode-generator gives direct matrix access — no DOM tricks needed
-    const qr = qrcode(0, 'H');  // type=0 (auto), level=H (30% tolerance)
-    qr.addData(data);
-    qr.make();
-
-    const size = qr.getModuleCount();
-    const matrix = [];
-    for (let y = 0; y < size; y++) {
-      const row = [];
-      for (let x = 0; x < size; x++) {
-        row.push(qr.isDark(y, x));  // true = dark module
-      }
-      matrix.push(row);
-    }
-    resolve(matrix);
-  });
+  const qr = qrcode(0, 'H');
+  qr.addData(data);
+  qr.make();
+  const sz = qr.getModuleCount();
+  const m = [];
+  for (let y = 0; y < sz; y++) {
+    const row = [];
+    for (let x = 0; x < sz; x++) row.push(qr.isDark(y, x));
+    m.push(row);
+  }
+  return m;
 }
 
 // ============================================================
-// Main: blend portrait + QR and render to canvas
+// Status helper
 // ============================================================
-document.getElementById('btn-generate').addEventListener('click', async () => {
-  const btn = document.getElementById('btn-generate');
-  const status = document.getElementById('status-msg');
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
 
-  btn.disabled = true;
-  status.textContent = 'Building vCard...';
+function setBtnsDisabled(v) {
+  document.getElementById('btn-card').disabled = v;
+  document.getElementById('btn-art').disabled  = v;
+}
 
-  const vcard = buildVCard();
-  const threshold = parseInt(threshSlider.value);
+// ============================================================
+// BUSINESS CARD GENERATOR
+// 85x54mm @ 300dpi = 1004x638px
+// Layout: portrait left 42%, QR + text right 58%
+// ============================================================
+document.getElementById('btn-card').addEventListener('click', async () => {
+  setBtnsDisabled(true);
+  const name  = document.getElementById('f-name').value.trim()  || 'Your Name';
+  const phone = document.getElementById('f-phone').value.trim() || '';
+  const email = document.getElementById('f-email').value.trim() || '';
 
-  status.textContent = 'Generating QR matrix...';
-  const matrix = await getQRMatrix(vcard);
-  const size = matrix.length;
+  setStatus('Generating QR code...');
+  const matrix = getQRMatrix(buildVCard(400));
+  const qrSize = matrix.length;
 
-  // Prepare portrait (or generate placeholder if none uploaded)
-  let bwPixels;
-  if (portraitDataURL) {
-    status.textContent = 'Processing portrait...';
-    bwPixels = await preparePortrait(size, threshold);
-  } else {
-    status.textContent = 'No portrait — using placeholder silhouette...';
-    // Simple oval head silhouette as placeholder
-    bwPixels = new Array(size * size).fill(false);
-    const phCx = size / 2, phCy = size / 2;
-    const phRx = size * 0.28, phRy = size * 0.38;
-    for (let py = 0; py < size; py++) {
-      for (let px2 = 0; px2 < size; px2++) {
-        const ddx = (px2 - phCx) / phRx;
-        const ddy = (py  - phCy) / phRy;
-        bwPixels[py * size + px2] = (ddx*ddx + ddy*ddy) <= 1.0;
-      }
-    }
-  }
-
-  status.textContent = 'Rendering portrait overlay...';
-
-  // BOX_SIZE: how many canvas pixels per QR module
-  const BOX = 10;
-  const canvas = document.getElementById('qr-canvas');
-  canvas.width  = size * BOX;
-  canvas.height = size * BOX;
+  const CW = 1004, CH = 638;
+  const canvas = document.getElementById('canvas-card');
+  canvas.width = CW; canvas.height = CH;
   const ctx = canvas.getContext('2d');
 
-  // === POSTER BLEND TECHNIQUE V2d ===
-  // Approach: draw silhouette UNDER QR, not through it
-  // QR black modules = fully opaque black (untouched)
-  // QR white modules = transparent → silhouette shows through
-  // Result: guaranteed scannable QR + visible silhouette
-
-  // Step 1: White background
+  // White background
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, CW, CH);
 
-  // Step 2: Draw silhouette as background layer
+  // Left: portrait
+  const photoW = Math.floor(CW * 0.42);
   if (portraitDataURL) {
-    const silImg = new Image();
-    await new Promise(res => { silImg.onload = res; silImg.src = portraitDataURL; });
-
-    const silOffscreen = document.createElement('canvas');
-    silOffscreen.width  = canvas.width;
-    silOffscreen.height = canvas.height;
-    const silCtx = silOffscreen.getContext('2d');
-    // Invert + grayscale: dark building → light grey, bright sky → dark grey
-    silCtx.filter = `grayscale(100%) invert(100%) contrast(1.3) brightness(${threshold/140})`;
-    silCtx.drawImage(silImg, 0, 0, canvas.width, canvas.height);
-
-    // Draw silhouette at moderate opacity as background
-    ctx.globalAlpha = 0.55;
-    ctx.drawImage(silOffscreen, 0, 0);
-    ctx.globalAlpha = 1.0;
+    setStatus('Drawing portrait...');
+    const pImg = new Image();
+    await new Promise(res => { pImg.onload = res; pImg.src = portraitDataURL; });
+    const srcR = pImg.width / pImg.height, dstR = photoW / CH;
+    let sx, sy, sw, sh;
+    if (srcR > dstR) { sh = pImg.height; sw = sh * dstR; sx = (pImg.width-sw)/2; sy = 0; }
+    else             { sw = pImg.width;  sh = sw / dstR; sx = 0; sy = (pImg.height-sh)/2; }
+    ctx.drawImage(pImg, sx, sy, sw, sh, 0, 0, photoW, CH);
+  } else {
+    ctx.fillStyle = '#cccccc';
+    ctx.fillRect(0, 0, photoW, CH);
+    ctx.fillStyle = '#888'; ctx.font = 'bold 24px Courier New'; ctx.textAlign = 'center';
+    ctx.fillText('PHOTO', photoW/2, CH/2);
   }
 
-  // Step 3: Draw QR on top — black modules solid, white modules = truly transparent
-  // White modules: fill with white (covers silhouette background in non-image areas)
-  // But in image area we want to SEE through — so use a different strategy:
-  // Draw ONLY the black modules, leave white modules untouched (silhouette shows through)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      if (matrix[y][x]) {
-        // Black module: solid black, fully covers silhouette → QR readable
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
-      }
-      // White module: leave as-is → silhouette background shows through
+  // Divider
+  ctx.fillStyle = '#000'; ctx.fillRect(photoW, 0, 2, CH);
+
+  // Right: QR
+  const rightX = photoW + 2, rightW = CW - rightX;
+  const margin = 24, contactH = 130;
+  const qrFit = Math.min(rightW - margin*2, CH - contactH - margin*2);
+  const BOX = Math.floor(qrFit / qrSize);
+  const qrPx = BOX * qrSize;
+  const qrX = rightX + Math.floor((rightW - qrPx) / 2);
+  const qrY = margin;
+
+  setStatus('Drawing QR code...');
+  ctx.fillStyle = '#fff'; ctx.fillRect(qrX, qrY, qrPx, qrPx);
+  for (let y = 0; y < qrSize; y++)
+    for (let x = 0; x < qrSize; x++) {
+      ctx.fillStyle = matrix[y][x] ? '#000' : '#fff';
+      ctx.fillRect(qrX + x*BOX, qrY + y*BOX, BOX, BOX);
     }
-  }
 
-  // Step 4: Ensure quiet zone border is clean white (no silhouette bleed)
-  // QR border (BORDER modules wide) must be pure white for scanner
-  const QUIET = 4; // border modules
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, QUIET * BOX);                    // top
-  ctx.fillRect(0, canvas.height - QUIET * BOX, canvas.width, QUIET * BOX); // bottom
-  ctx.fillRect(0, 0, QUIET * BOX, canvas.height);                   // left
-  ctx.fillRect(canvas.width - QUIET * BOX, 0, QUIET * BOX, canvas.height); // right
+  // Contact text
+  const textY = qrY + qrPx + 36;
+  const textCX = rightX + rightW/2;
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#000';
+  ctx.font = `bold ${Math.floor(rightW*0.075)}px Courier New`;
+  ctx.fillText(name, textCX, textY);
+  ctx.font = `${Math.floor(rightW*0.055)}px Courier New`;
+  ctx.fillStyle = '#222';
+  const lineH = Math.floor(rightW * 0.072);
+  if (phone) ctx.fillText(phone, textCX, textY + lineH);
+  if (email) ctx.fillText(email, textCX, textY + lineH * 2);
 
-  // Step 5: Redraw black modules in quiet zone (finder patterns are here)
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const inQuiet = x < QUIET || x >= size-QUIET || y < QUIET || y >= size-QUIET;
-      if (inQuiet && matrix[y][x]) {
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
-      }
-    }
-  }
+  // Border
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 3;
+  ctx.strokeRect(1, 1, CW-2, CH-2);
 
-  // Show output section
-  document.getElementById('output-section').style.display = 'block';
-  document.getElementById('output-section').scrollIntoView({ behavior: 'smooth' });
+  document.getElementById('out-card').style.display = 'block';
+  document.getElementById('out-card').scrollIntoView({ behavior: 'smooth' });
+  setStatus('Business card ready! Download and print at 300 DPI (85×54mm).');
+  setBtnsDisabled(false);
+});
 
-  status.textContent = `Done! Matrix: ${size}×${size} modules. Scan to verify.`;
-  btn.disabled = false;
+document.getElementById('btn-dl-card').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.download = 'business_card.png';
+  a.href = document.getElementById('canvas-card').toDataURL('image/png');
+  a.click();
 });
 
 // ============================================================
-// Download generated QR as PNG
+// ART QR GENERATOR
+// Silhouette/landmark blend: image under QR via multiply
 // ============================================================
-document.getElementById('btn-download').addEventListener('click', () => {
-  const canvas = document.getElementById('qr-canvas');
-  const link = document.createElement('a');
-  link.download = 'art_qr.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+document.getElementById('btn-art').addEventListener('click', async () => {
+  setBtnsDisabled(true);
+  const threshold = parseInt(document.getElementById('threshold').value);
+
+  setStatus('Generating QR matrix...');
+  const matrix = getQRMatrix(buildVCard(1200));
+  const size = matrix.length;
+  const BOX = 10;
+  const canvas = document.getElementById('canvas-art');
+  canvas.width = canvas.height = size * BOX;
+  const ctx = canvas.getContext('2d');
+  const CW = canvas.width;
+
+  // White background
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, CW, CW);
+
+  // Silhouette layer
+  if (portraitDataURL) {
+    setStatus('Processing image...');
+    const silImg = new Image();
+    await new Promise(res => { silImg.onload = res; silImg.src = portraitDataURL; });
+    const off = document.createElement('canvas');
+    off.width = off.height = CW;
+    const octx = off.getContext('2d');
+    octx.filter = `grayscale(100%) invert(100%) contrast(1.3) brightness(${threshold/140})`;
+    octx.drawImage(silImg, 0, 0, CW, CW);
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(off, 0, 0);
+    ctx.globalAlpha = 1.0;
+  }
+
+  // QR black modules on top
+  setStatus('Rendering QR...');
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++)
+      if (matrix[y][x]) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x*BOX, y*BOX, BOX, BOX);
+      }
+
+  // Clean quiet zone border
+  const QUIET = 4;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, CW, QUIET*BOX);
+  ctx.fillRect(0, CW-QUIET*BOX, CW, QUIET*BOX);
+  ctx.fillRect(0, 0, QUIET*BOX, CW);
+  ctx.fillRect(CW-QUIET*BOX, 0, QUIET*BOX, CW);
+  // Redraw black modules in quiet zone
+  for (let y = 0; y < size; y++)
+    for (let x = 0; x < size; x++)
+      if ((x<QUIET||x>=size-QUIET||y<QUIET||y>=size-QUIET) && matrix[y][x]) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(x*BOX, y*BOX, BOX, BOX);
+      }
+
+  document.getElementById('out-art').style.display = 'block';
+  document.getElementById('out-art').scrollIntoView({ behavior: 'smooth' });
+  setStatus('Art QR ready! Scan to verify, then download.');
+  setBtnsDisabled(false);
+});
+
+document.getElementById('btn-dl-art').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.download = 'art_qr.png';
+  a.href = document.getElementById('canvas-art').toDataURL('image/png');
+  a.click();
 });
 </script>
 </body>
