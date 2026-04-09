@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1k</p>
+  <p class="subtitle">GENERATOR — V1l</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -344,11 +344,13 @@ function preparePortrait(matrixSize, threshold) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      // Draw portrait scaled to matrix size on an offscreen canvas
+      // Draw portrait at exact QR matrix size using bicubic-quality smoothing
       const c = document.createElement('canvas');
       c.width  = matrixSize;
       c.height = matrixSize;
       const ctx = c.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, matrixSize, matrixSize);
 
       // Read pixel data and convert to B&W using Floyd-Steinberg dithering
@@ -445,14 +447,14 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   } else {
     status.textContent = 'No portrait — using placeholder silhouette...';
     // Simple oval head silhouette as placeholder
-    bwPixels = Array(size * size).fill(false);
-    const cx = size / 2, cy = size / 2;
-    const rx = size * 0.28, ry = size * 0.38;
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const dx = (x - cx) / rx;
-        const dy = (y - cy) / ry;
-        bwPixels[y * size + x] = (dx*dx + dy*dy) <= 1.0;
+    bwPixels = new Array(size * size).fill(false);
+    const phCx = size / 2, phCy = size / 2;
+    const phRx = size * 0.28, phRy = size * 0.38;
+    for (let py = 0; py < size; py++) {
+      for (let px2 = 0; px2 < size; px2++) {
+        const ddx = (px2 - phCx) / phRx;
+        const ddy = (py  - phCy) / phRy;
+        bwPixels[py * size + px2] = (ddx*ddx + ddy*ddy) <= 1.0;
       }
     }
   }
