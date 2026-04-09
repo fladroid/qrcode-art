@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1m</p>
+  <p class="subtitle">GENERATOR — V1n</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -470,7 +470,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
     }
   }
 
-  status.textContent = 'Blending image with QR data...';
+  status.textContent = 'Rendering portrait overlay...';
 
   // BOX_SIZE: how many canvas pixels per QR module
   const BOX = 10;
@@ -478,44 +478,43 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   canvas.width  = size * BOX;
   canvas.height = size * BOX;
   const ctx = canvas.getContext('2d');
+
+  // --- LAYER 1: Portrait as background ---
+  // Draw portrait stretched to full canvas size, in grayscale
+  // White background first
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  if (portraitDataURL) {
+    // Draw portrait image directly onto canvas (full size, grayscale via CSS filter)
+    const portraitImg = new Image();
+    await new Promise(res => { portraitImg.onload = res; portraitImg.src = portraitDataURL; });
+
+    // Offscreen canvas for grayscale conversion
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = canvas.width;
+    offscreen.height = canvas.height;
+    const octx = offscreen.getContext('2d');
+    octx.filter = 'grayscale(100%) contrast(1.4) brightness(1.1)';
+    octx.drawImage(portraitImg, 0, 0, canvas.width, canvas.height);
+
+    // Draw portrait onto main canvas at 55% opacity
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(offscreen, 0, 0);
+    ctx.globalAlpha = 1.0;
+  }
+
+  // --- LAYER 2: QR modules on top ---
+  // Black modules drawn as solid squares — fully opaque
+  // White modules left transparent so portrait shows through
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      const qrDark  = matrix[y][x];
-      const imgDark = bwPixels[y * size + x];
-
-      let dark;
-      if (isProtected(x, y, size)) {
-        // Structural zones: always preserve QR
-        dark = qrDark;
-      } else {
-        // Soft blend using distance from center as weight
-        // Center (dist=0): portrait has full influence
-        // Edge (dist=1): QR has full influence
-        // Transition zone: weighted probability between the two
-        const cx = size / 2, cy = size / 2;
-        const dx = Math.abs(x - cx) / (size / 2);
-        const dy = Math.abs(y - cy) / (size / 2);
-        const dist = Math.max(dx, dy);  // 0=center, 1=edge
-
-        // Portrait influence fades from 1.0 at center to 0.0 at dist=0.5
-        // Beyond dist=0.5 QR always wins — ensures outer data modules intact
-        const portraitWeight = Math.max(0, 1 - dist / 0.45);
-
-        if (portraitWeight > 0.5) {
-          // Strong portrait zone: blend portrait with QR
-          // Portrait wins only where it agrees OR weight is very high
-          dark = (portraitWeight > 0.8) ? imgDark : (imgDark === qrDark ? qrDark : qrDark);
-        } else {
-          // QR zone: always use QR value
-          dark = qrDark;
-        }
+      if (matrix[y][x]) {
+        // Dark QR module: draw solid black square
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
       }
-
-      ctx.fillStyle = dark ? '#000000' : '#ffffff';
-      ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
+      // Light QR module: leave transparent — portrait background shows through
     }
   }
 
