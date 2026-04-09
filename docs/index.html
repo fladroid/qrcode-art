@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1f</p>
+  <p class="subtitle">GENERATOR — V1g</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -453,9 +453,17 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
         // Structural zones (finder/timing): always preserve QR value
         dark = qrDark;
       } else {
-        // Data modules: portrait wins — we rely on H-level error correction
-        // (up to 30% of modules can differ and QR remains scannable)
-        dark = imgDark;
+        // Weighted blend: portrait influences dark modules only
+        // If portrait pixel is dark AND QR agrees → black (strong signal)
+        // If portrait pixel is light → always white (clears background)
+        // If portrait is dark but QR disagrees → keep QR (protect data)
+        if (!imgDark) {
+          // Light portrait pixel → force white (clear background)
+          dark = false;
+        } else {
+          // Dark portrait pixel → use QR value (preserve data integrity)
+          dark = qrDark;
+        }
       }
 
       ctx.fillStyle = dark ? '#000000' : '#ffffff';
