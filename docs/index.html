@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1d</p>
+  <p class="subtitle">GENERATOR — V1e</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -277,7 +277,7 @@
 </div>
 
 <!-- QR code library (pure JS, no dependencies) -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
 // ============================================================
 // Portrait preview + threshold live update
@@ -372,38 +372,26 @@ function isProtected(x, y, size) {
 }
 
 // ============================================================
-// Generate QR matrix using qrcodejs hidden div
+// Generate QR matrix using qrcode-generator library
 // Returns 2D boolean matrix (true = dark module)
 // ============================================================
 function getQRMatrix(data) {
   return new Promise((resolve) => {
-    // qrcodejs renders to a table — we read cells to extract the matrix
-    const hidden = document.createElement('div');
-    hidden.style.display = 'none';
-    document.body.appendChild(hidden);
+    // qrcode-generator gives direct matrix access — no DOM tricks needed
+    const qr = qrcode(0, 'H');  // type=0 (auto), level=H (30% tolerance)
+    qr.addData(data);
+    qr.make();
 
-    new QRCode(hidden, {
-      text: data,
-      width: 256,
-      height: 256,
-      correctLevel: QRCode.CorrectLevel.H  // 30% error tolerance
-    });
-
-    // Small delay to let qrcodejs render the table
-    setTimeout(() => {
-      const table = hidden.querySelector('table');
-      const matrix = [];
-      for (const row of table.rows) {
-        const r = [];
-        for (const cell of row.cells) {
-          // Dark cell = dark module (true)
-          r.push(cell.style.backgroundColor === 'rgb(0, 0, 0)');
-        }
-        matrix.push(r);
+    const size = qr.getModuleCount();
+    const matrix = [];
+    for (let y = 0; y < size; y++) {
+      const row = [];
+      for (let x = 0; x < size; x++) {
+        row.push(qr.isDark(y, x));  // true = dark module
       }
-      document.body.removeChild(hidden);
-      resolve(matrix);
-    }, 100);
+      matrix.push(row);
+    }
+    resolve(matrix);
   });
 }
 
