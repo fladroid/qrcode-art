@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1n</p>
+  <p class="subtitle">GENERATOR — V1o</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -479,43 +479,67 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   canvas.height = size * BOX;
   const ctx = canvas.getContext('2d');
 
-  // --- LAYER 1: Portrait as background ---
-  // Draw portrait stretched to full canvas size, in grayscale
-  // White background first
+  // --- LAYER 1: White background ---
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // --- LAYER 2: Portrait in center zone only ---
+  // Portrait is drawn only within the safe inner area (avoids finder patterns)
+  // Opacity kept low so QR modules remain clearly black on white
   if (portraitDataURL) {
-    // Draw portrait image directly onto canvas (full size, grayscale via CSS filter)
     const portraitImg = new Image();
     await new Promise(res => { portraitImg.onload = res; portraitImg.src = portraitDataURL; });
 
-    // Offscreen canvas for grayscale conversion
-    const offscreen = document.createElement('canvas');
-    offscreen.width  = canvas.width;
-    offscreen.height = canvas.height;
-    const octx = offscreen.getContext('2d');
-    octx.filter = 'grayscale(100%) contrast(1.4) brightness(1.1)';
-    octx.drawImage(portraitImg, 0, 0, canvas.width, canvas.height);
+    // Define safe portrait zone: 20%-80% of canvas (avoids all finder/timing zones)
+    const margin = Math.floor(size * 0.18) * BOX;
+    const zoneSize = canvas.width - margin * 2;
 
-    // Draw portrait onto main canvas at 55% opacity
-    ctx.globalAlpha = 0.55;
-    ctx.drawImage(offscreen, 0, 0);
+    // Offscreen canvas: grayscale portrait at zone size
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = zoneSize;
+    offscreen.height = zoneSize;
+    const octx = offscreen.getContext('2d');
+    octx.filter = 'grayscale(100%) contrast(1.6) brightness(1.15)';
+    octx.drawImage(portraitImg, 0, 0, zoneSize, zoneSize);
+
+    // Draw into center zone at low opacity — portrait visible but QR readable
+    ctx.globalAlpha = 0.28;
+    ctx.drawImage(offscreen, margin, margin);
     ctx.globalAlpha = 1.0;
   }
 
-  // --- LAYER 2: QR modules on top ---
-  // Black modules drawn as solid squares — fully opaque
-  // White modules left transparent so portrait shows through
+  // --- LAYER 3: QR modules — fully opaque on top ---
+  // Black modules: solid black (overrides any portrait underneath)
+  // White modules: solid white (clean, maximizes QR contrast for scanner)
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      if (matrix[y][x]) {
-        // Dark QR module: draw solid black square
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
-      }
-      // Light QR module: leave transparent — portrait background shows through
+      ctx.fillStyle = matrix[y][x] ? '#000000' : '#ffffff';
+      ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
     }
+  }
+
+  // --- LAYER 4: Re-draw portrait ONLY in white modules of center zone ---
+  // This is the key: portrait shows through white modules as grey tint
+  if (portraitDataURL) {
+    const portraitImg2 = new Image();
+    await new Promise(res => { portraitImg2.onload = res; portraitImg2.src = portraitDataURL; });
+
+    const margin = Math.floor(size * 0.18) * BOX;
+    const zoneSize = canvas.width - margin * 2;
+
+    const offscreen2 = document.createElement('canvas');
+    offscreen2.width  = zoneSize;
+    offscreen2.height = zoneSize;
+    const octx2 = offscreen2.getContext('2d');
+    octx2.filter = 'grayscale(100%) contrast(1.6) brightness(1.15)';
+    octx2.drawImage(portraitImg2, 0, 0, zoneSize, zoneSize);
+
+    // Use 'multiply' blend mode: white pixels stay white, dark portrait tints white modules grey
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = 0.75;
+    ctx.drawImage(offscreen2, margin, margin);
+    ctx.globalAlpha = 1.0;
+    ctx.globalCompositeOperation = 'source-over';
   }
 
   // Show output section
