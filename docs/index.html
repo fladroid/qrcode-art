@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1e</p>
+  <p class="subtitle">GENERATOR — V1f</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -450,11 +450,12 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
 
       let dark;
       if (isProtected(x, y, size)) {
-        dark = qrDark;           // structural zone: always keep QR value
-      } else if (imgDark === qrDark) {
-        dark = qrDark;           // agreement: image shows through naturally
+        // Structural zones (finder/timing): always preserve QR value
+        dark = qrDark;
       } else {
-        dark = qrDark;           // conflict: QR data wins (preserves scannability)
+        // Data modules: portrait wins — we rely on H-level error correction
+        // (up to 30% of modules can differ and QR remains scannable)
+        dark = imgDark;
       }
 
       ctx.fillStyle = dark ? '#000000' : '#ffffff';
