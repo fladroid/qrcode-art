@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V2a POSTER</p>
+  <p class="subtitle">GENERATOR — V1o</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -479,64 +479,68 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   canvas.height = size * BOX;
   const ctx = canvas.getContext('2d');
 
-  // === POSTER / SILHOUETTE BLEND TECHNIQUE ===
-  // Best for: buildings, skylines, landmarks, landscapes
-  //
-  // How it works:
-  //   1. Draw clean QR (black modules on white)
-  //   2. Apply silhouette via CSS 'multiply' blend mode
-  //      - multiply(white, grey) = grey  → silhouette tints white modules
-  //      - multiply(black, anything) = black → QR modules stay solid black
-  //   3. Result: silhouette visible through QR, scanner reads black modules
+  // --- LAYER 1: White background ---
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // --- Prepare offscreen QR layer (clean black/white) ---
-  const qrOffscreen = document.createElement('canvas');
-  qrOffscreen.width  = canvas.width;
-  qrOffscreen.height = canvas.height;
-  const qrCtx = qrOffscreen.getContext('2d');
-  qrCtx.fillStyle = '#ffffff';
-  qrCtx.fillRect(0, 0, canvas.width, canvas.height);
+  // --- LAYER 2: Portrait in center zone only ---
+  // Portrait is drawn only within the safe inner area (avoids finder patterns)
+  // Opacity kept low so QR modules remain clearly black on white
+  if (portraitDataURL) {
+    const portraitImg = new Image();
+    await new Promise(res => { portraitImg.onload = res; portraitImg.src = portraitDataURL; });
+
+    // Define safe portrait zone: 20%-80% of canvas (avoids all finder/timing zones)
+    const margin = Math.floor(size * 0.18) * BOX;
+    const zoneSize = canvas.width - margin * 2;
+
+    // Offscreen canvas: grayscale portrait at zone size
+    const offscreen = document.createElement('canvas');
+    offscreen.width  = zoneSize;
+    offscreen.height = zoneSize;
+    const octx = offscreen.getContext('2d');
+    octx.filter = 'grayscale(100%) contrast(1.6) brightness(1.15)';
+    octx.drawImage(portraitImg, 0, 0, zoneSize, zoneSize);
+
+    // Draw into center zone at low opacity — portrait visible but QR readable
+    ctx.globalAlpha = 0.28;
+    ctx.drawImage(offscreen, margin, margin);
+    ctx.globalAlpha = 1.0;
+  }
+
+  // --- LAYER 3: QR modules — fully opaque on top ---
+  // Black modules: solid black (overrides any portrait underneath)
+  // White modules: solid white (clean, maximizes QR contrast for scanner)
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
-      if (matrix[y][x]) {
-        qrCtx.fillStyle = '#000000';
-        qrCtx.fillRect(x * BOX, y * BOX, BOX, BOX);
-      }
+      ctx.fillStyle = matrix[y][x] ? '#000000' : '#ffffff';
+      ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
     }
   }
 
+  // --- LAYER 4: Re-draw portrait ONLY in white modules of center zone ---
+  // This is the key: portrait shows through white modules as grey tint
   if (portraitDataURL) {
-    // --- Prepare silhouette layer ---
-    // Silhouette image: dark subject on light background works best
-    // We map: dark pixels → light grey (visible through QR white modules)
-    //         light pixels → dark grey (tints background)
-    // This creates an "inverted" effect where the subject appears lighter than background
-    const silOffscreen = document.createElement('canvas');
-    silOffscreen.width  = canvas.width;
-    silOffscreen.height = canvas.height;
-    const silCtx = silOffscreen.getContext('2d');
+    const portraitImg2 = new Image();
+    await new Promise(res => { portraitImg2.onload = res; portraitImg2.src = portraitDataURL; });
 
-    const silImg = new Image();
-    await new Promise(res => { silImg.onload = res; silImg.src = portraitDataURL; });
+    const margin = Math.floor(size * 0.18) * BOX;
+    const zoneSize = canvas.width - margin * 2;
 
-    // Draw image with grayscale + invert filter
-    // invert() swaps dark/light so building (dark) becomes light — shows through white QR modules
-    silCtx.filter = `grayscale(100%) invert(100%) contrast(1.4) brightness(${threshold/128})`;
-    silCtx.drawImage(silImg, 0, 0, canvas.width, canvas.height);
+    const offscreen2 = document.createElement('canvas');
+    offscreen2.width  = zoneSize;
+    offscreen2.height = zoneSize;
+    const octx2 = offscreen2.getContext('2d');
+    octx2.filter = 'grayscale(100%) contrast(1.6) brightness(1.15)';
+    octx2.drawImage(portraitImg2, 0, 0, zoneSize, zoneSize);
 
-    // Apply multiply blend: draws silhouette onto QR layer
-    // multiply keeps black modules black, tints white modules with silhouette
-    qrCtx.globalCompositeOperation = 'multiply';
-    qrCtx.globalAlpha = 0.85;
-    qrCtx.drawImage(silOffscreen, 0, 0);
-    qrCtx.globalAlpha = 1.0;
-    qrCtx.globalCompositeOperation = 'source-over';
+    // Use 'multiply' blend mode: white pixels stay white, dark portrait tints white modules grey
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = 0.75;
+    ctx.drawImage(offscreen2, margin, margin);
+    ctx.globalAlpha = 1.0;
+    ctx.globalCompositeOperation = 'source-over';
   }
-
-  // Draw final result to main canvas
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(qrOffscreen, 0, 0);
 
   // Show output section
   document.getElementById('output-section').style.display = 'block';
