@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1l</p>
+  <p class="subtitle">GENERATOR — V1m</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -364,20 +364,31 @@ function preparePortrait(matrixSize, threshold) {
         gray[i] = 0.299 * pixels[i*4] + 0.587 * pixels[i*4+1] + 0.114 * pixels[i*4+2];
       }
 
-      // Floyd-Steinberg dithering
+      // Floyd-Steinberg dithering — applied only in center portrait zone
+      // Outside center zone: plain threshold (no error diffusion bleeds into QR data)
+      const CENTER_ZONE = 0.45;  // must match blend zone in render loop
       const bw = new Array(matrixSize * matrixSize).fill(false);
+      const cx = matrixSize / 2, cy = matrixSize / 2;
+
       for (let y = 0; y < matrixSize; y++) {
         for (let x = 0; x < matrixSize; x++) {
           const idx = y * matrixSize + x;
           const oldVal = gray[idx];
           const newVal = oldVal < threshold ? 0 : 255;
-          bw[idx] = newVal === 0;  // true = dark
-          const err = oldVal - newVal;
-          // Distribute error to neighbours (Floyd-Steinberg coefficients)
-          if (x + 1 < matrixSize)                        gray[idx + 1]             += err * 7 / 16;
-          if (y + 1 < matrixSize && x > 0)               gray[idx + matrixSize - 1] += err * 3 / 16;
-          if (y + 1 < matrixSize)                        gray[idx + matrixSize]     += err * 5 / 16;
-          if (y + 1 < matrixSize && x + 1 < matrixSize)  gray[idx + matrixSize + 1] += err * 1 / 16;
+          bw[idx] = newVal === 0;
+
+          // Only diffuse error within center zone — protect outer QR data modules
+          const ddx = Math.abs(x - cx) / (matrixSize / 2);
+          const ddy = Math.abs(y - cy) / (matrixSize / 2);
+          const inCenter = Math.max(ddx, ddy) < CENTER_ZONE;
+
+          if (inCenter) {
+            const err = oldVal - newVal;
+            if (x + 1 < matrixSize)                          gray[idx + 1]              += err * 7 / 16;
+            if (y + 1 < matrixSize && x > 0)                 gray[idx + matrixSize - 1] += err * 3 / 16;
+            if (y + 1 < matrixSize)                          gray[idx + matrixSize]     += err * 5 / 16;
+            if (y + 1 < matrixSize && x + 1 < matrixSize)    gray[idx + matrixSize + 1] += err * 1 / 16;
+          }
         }
       }
       resolve(bw);
@@ -477,22 +488,28 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
 
       let dark;
       if (isProtected(x, y, size)) {
-        // Structural zones (finder/timing): always preserve QR value
+        // Structural zones: always preserve QR
         dark = qrDark;
       } else {
-        // Zone-based blend:
-        // - Center 40% of canvas → portrait wins (face is visible here)
-        // - Outer zone → QR wins (critical data modules preserved here)
+        // Soft blend using distance from center as weight
+        // Center (dist=0): portrait has full influence
+        // Edge (dist=1): QR has full influence
+        // Transition zone: weighted probability between the two
         const cx = size / 2, cy = size / 2;
-        const dx = Math.abs(x - cx) / (size / 2);  // 0=center, 1=edge
+        const dx = Math.abs(x - cx) / (size / 2);
         const dy = Math.abs(y - cy) / (size / 2);
-        const distFromCenter = Math.max(dx, dy);    // Chebyshev distance
+        const dist = Math.max(dx, dy);  // 0=center, 1=edge
 
-        if (distFromCenter < 0.45) {
-          // Center zone: portrait drives the pixel
-          dark = imgDark;
+        // Portrait influence fades from 1.0 at center to 0.0 at dist=0.5
+        // Beyond dist=0.5 QR always wins — ensures outer data modules intact
+        const portraitWeight = Math.max(0, 1 - dist / 0.45);
+
+        if (portraitWeight > 0.5) {
+          // Strong portrait zone: blend portrait with QR
+          // Portrait wins only where it agrees OR weight is very high
+          dark = (portraitWeight > 0.8) ? imgDark : (imgDark === qrDark ? qrDark : qrDark);
         } else {
-          // Outer zone: QR data drives the pixel (ensures scannability)
+          // QR zone: always use QR value
           dark = qrDark;
         }
       }
