@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V1g</p>
+  <p class="subtitle">GENERATOR — V1h</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -453,15 +453,19 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
         // Structural zones (finder/timing): always preserve QR value
         dark = qrDark;
       } else {
-        // Weighted blend: portrait influences dark modules only
-        // If portrait pixel is dark AND QR agrees → black (strong signal)
-        // If portrait pixel is light → always white (clears background)
-        // If portrait is dark but QR disagrees → keep QR (protect data)
-        if (!imgDark) {
-          // Light portrait pixel → force white (clear background)
-          dark = false;
+        // Zone-based blend:
+        // - Center 40% of canvas → portrait wins (face is visible here)
+        // - Outer zone → QR wins (critical data modules preserved here)
+        const cx = size / 2, cy = size / 2;
+        const dx = Math.abs(x - cx) / (size / 2);  // 0=center, 1=edge
+        const dy = Math.abs(y - cy) / (size / 2);
+        const distFromCenter = Math.max(dx, dy);    // Chebyshev distance
+
+        if (distFromCenter < 0.40) {
+          // Center zone: portrait drives the pixel
+          dark = imgDark;
         } else {
-          // Dark portrait pixel → use QR value (preserve data integrity)
+          // Outer zone: QR data drives the pixel (ensures scannability)
           dark = qrDark;
         }
       }
