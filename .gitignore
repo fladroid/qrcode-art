@@ -4,3 +4,7 @@ __pycache__/
 output/*.png
 output/*.jpg
 !output/.gitkeep
+
+# Allow docs/ output for GitHub Pages
+!docs/art_qr.png
+!docs/index.html
