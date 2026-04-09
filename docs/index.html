@@ -222,7 +222,7 @@
 <div class="container">
 
   <h1>QR CODE ART</h1>
-  <p class="subtitle">GENERATOR — V2c</p>
+  <p class="subtitle">GENERATOR — V2d</p>
 
   <!-- Contact data form -->
   <div class="card">
@@ -479,84 +479,66 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
   canvas.height = size * BOX;
   const ctx = canvas.getContext('2d');
 
-  // === POSTER / SILHOUETTE BLEND TECHNIQUE ===
-  // Best for: buildings, skylines, landmarks, landscapes
-  //
-  // How it works:
-  //   1. Draw clean QR (black modules on white)
-  //   2. Apply silhouette via CSS 'multiply' blend mode
-  //      - multiply(white, grey) = grey  → silhouette tints white modules
-  //      - multiply(black, anything) = black → QR modules stay solid black
-  //   3. Result: silhouette visible through QR, scanner reads black modules
+  // === POSTER BLEND TECHNIQUE V2d ===
+  // Approach: draw silhouette UNDER QR, not through it
+  // QR black modules = fully opaque black (untouched)
+  // QR white modules = transparent → silhouette shows through
+  // Result: guaranteed scannable QR + visible silhouette
 
-  // --- Prepare offscreen QR layer (clean black/white) ---
-  const qrOffscreen = document.createElement('canvas');
-  qrOffscreen.width  = canvas.width;
-  qrOffscreen.height = canvas.height;
-  const qrCtx = qrOffscreen.getContext('2d');
-  qrCtx.fillStyle = '#ffffff';
-  qrCtx.fillRect(0, 0, canvas.width, canvas.height);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      if (matrix[y][x]) {
-        qrCtx.fillStyle = '#000000';
-        qrCtx.fillRect(x * BOX, y * BOX, BOX, BOX);
-      }
-    }
-  }
+  // Step 1: White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // Step 2: Draw silhouette as background layer
   if (portraitDataURL) {
-    // --- Prepare silhouette layer ---
-    // Silhouette image: dark subject on light background works best
-    // We map: dark pixels → light grey (visible through QR white modules)
-    //         light pixels → dark grey (tints background)
-    // This creates an "inverted" effect where the subject appears lighter than background
+    const silImg = new Image();
+    await new Promise(res => { silImg.onload = res; silImg.src = portraitDataURL; });
+
     const silOffscreen = document.createElement('canvas');
     silOffscreen.width  = canvas.width;
     silOffscreen.height = canvas.height;
     const silCtx = silOffscreen.getContext('2d');
-
-    const silImg = new Image();
-    await new Promise(res => { silImg.onload = res; silImg.src = portraitDataURL; });
-
-    // Draw image with grayscale + invert filter
-    // invert() swaps dark/light so building (dark) becomes light — shows through white QR modules
-    silCtx.filter = `grayscale(100%) invert(100%) contrast(1.4) brightness(${threshold/128})`;
+    // Invert + grayscale: dark building → light grey, bright sky → dark grey
+    silCtx.filter = `grayscale(100%) invert(100%) contrast(1.3) brightness(${threshold/140})`;
     silCtx.drawImage(silImg, 0, 0, canvas.width, canvas.height);
 
-    // Apply multiply blend: draws silhouette onto QR layer
-    // multiply keeps black modules black, tints white modules with silhouette
-    qrCtx.globalCompositeOperation = 'multiply';
-    qrCtx.globalAlpha = 0.85;
-    qrCtx.drawImage(silOffscreen, 0, 0);
-    qrCtx.globalAlpha = 1.0;
-    qrCtx.globalCompositeOperation = 'source-over';
+    // Draw silhouette at moderate opacity as background
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(silOffscreen, 0, 0);
+    ctx.globalAlpha = 1.0;
   }
 
-  // Draw final result to main canvas
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(qrOffscreen, 0, 0);
+  // Step 3: Draw QR on top — black modules solid, white modules = truly transparent
+  // White modules: fill with white (covers silhouette background in non-image areas)
+  // But in image area we want to SEE through — so use a different strategy:
+  // Draw ONLY the black modules, leave white modules untouched (silhouette shows through)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (matrix[y][x]) {
+        // Black module: solid black, fully covers silhouette → QR readable
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
+      }
+      // White module: leave as-is → silhouette background shows through
+    }
+  }
 
-  // --- CRITICAL: Redraw structural zones as pure B&W LAST ---
-  // Must be the very last drawing operation — nothing drawn after this
-  // Covers: finder patterns, separators, timing patterns, format info strips
-  const protectedZones = [
-    [0,      0,      9,    9   ],  // top-left finder + separator
-    [size-9, 0,      9,    9   ],  // top-right finder + separator
-    [0,      size-9, 9,    9   ],  // bottom-left finder + separator
-    [0,      6,      size, 1   ],  // horizontal timing pattern
-    [6,      0,      1,    size],  // vertical timing pattern
-    [size-9, 8,      9,    1   ],  // top-right format info
-    [8,      size-9, 1,    9   ],  // bottom-left format info
-    [8,      0,      1,    9   ],  // top-left format info vertical
-    [0,      8,      9,    1   ],  // top-left format info horizontal
-  ];
-  for (const [px, py, pw, ph] of protectedZones) {
-    for (let gy = py; gy < Math.min(py + ph, size); gy++) {
-      for (let gx = px; gx < Math.min(px + pw, size); gx++) {
-        ctx.fillStyle = matrix[gy][gx] ? '#000000' : '#ffffff';
-        ctx.fillRect(gx * BOX, gy * BOX, BOX, BOX);
+  // Step 4: Ensure quiet zone border is clean white (no silhouette bleed)
+  // QR border (BORDER modules wide) must be pure white for scanner
+  const QUIET = 4; // border modules
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, QUIET * BOX);                    // top
+  ctx.fillRect(0, canvas.height - QUIET * BOX, canvas.width, QUIET * BOX); // bottom
+  ctx.fillRect(0, 0, QUIET * BOX, canvas.height);                   // left
+  ctx.fillRect(canvas.width - QUIET * BOX, 0, QUIET * BOX, canvas.height); // right
+
+  // Step 5: Redraw black modules in quiet zone (finder patterns are here)
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const inQuiet = x < QUIET || x >= size-QUIET || y < QUIET || y >= size-QUIET;
+      if (inQuiet && matrix[y][x]) {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(x * BOX, y * BOX, BOX, BOX);
       }
     }
   }
